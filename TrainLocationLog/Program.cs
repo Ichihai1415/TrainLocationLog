@@ -94,7 +94,7 @@ void HF()
     U103:0
     E=駅停車　D:下り？U:上り
      */
-    var res_hrm = client.GetAsync("https://trainlocation.hapi-line.co.jp/data/traffic_info.json").Result;
+    var res_hrm = client.GetAsync("https://trainlocation.hapi-line.co.jp/data/traffic_info.json?" + DateTime.Now.Ticks).Result;
     var res = res_hrm.Content.ReadAsStringAsync().Result;
     var json = JsonNode.Parse(res);
 
@@ -137,7 +137,7 @@ void IRAK()
 {
     foreach (var comp in new string[] { "IR", "AK" })
     {
-        var res_hrm = client.GetAsync(comp == "IR" ? "https://www.ishikawa-railway.jp/api/v1/trains" : "https://trafficinfo.ainokaze.co.jp/api//json/train.json").Result;
+        var res_hrm = client.GetAsync(comp == "IR" ? "https://www.ishikawa-railway.jp/api/v1/trains?" + DateTime.Now.Ticks : "https://trafficinfo.ainokaze.co.jp/api//json/train.json?" + DateTime.Now.Ticks).Result;
         var res = res_hrm.Content.ReadAsStringAsync().Result.Replace("@", "");
         var json = comp == "IR" ? JsonSerializer.Deserialize<OPDT[]>(res) : JsonSerializer.Deserialize<OPDT[]>(JsonSerializer.Deserialize<AK_data>(res)!.Result.Data);
 
