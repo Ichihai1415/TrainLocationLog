@@ -150,6 +150,7 @@ void IRAK()
 
         foreach (var tr in json)
         {
+            dt = tr.DcDate.ToString();
             var num = RemoveTop0F(tr.OdptTrainNumber);
             var type = comp == "IR" ? ir_carType_dict[tr.OdptTrainType] : tr.OdptTrainType;
             var delay = tr.OdptDelay;
