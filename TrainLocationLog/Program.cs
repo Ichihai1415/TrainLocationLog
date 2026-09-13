@@ -159,7 +159,7 @@ void IRAK()
             var to = StationConverter(tr.OdptToStation, comp);
             var dir = comp == "IR" ? ir_direction_dict[tr.OdptRailDirection] : tr.OdptRailDirection.Replace("行き", "");
 
-            var line = $"{dt},{comp},{type},{from},{to},{delay},{start}始発 {dir} {terminal}行";
+            var line = $"{dt},{comp},{type},{from},{to},{delay},{start}始発 {dir} {terminal}行\n";
             Console.WriteLine($"  {num} {type}  {start}始発 {dir} {(terminal == "null" ? "" : (terminal + "行"))}  {from}{(to == "null" ? "付近" : ("～" + to))}  delay={delay}");
             AddCsv(comp, num, line);
         }
