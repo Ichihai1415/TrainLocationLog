@@ -125,7 +125,7 @@ void HF()
                 syName ??= "null";
                 ikName ??= "null";
                 idName ??= "null";
-                var line = $"{dt},HF,{syName},{(isE ? idName : "(前駅)")},{idName},{dl},key={key}/id={id}/bs={bs},hk={hk}\n";
+                var line = $"{dt},HF,{syName},{(isE ? idName : "(前駅)")},{(isE ? "null" : idName)},{dl},key={key}/id={id}/bs={bs}/hk={hk}\n";
                 Console.WriteLine($"  {no} {syName}  {(isU ? "上り" : isD ? "下り" : "")} {(ikName == "null" ? "" : (ikName + "行 "))} {(!isE ? "(前駅)～" : "")}{idName}{(isE ? "付近" : "")}  delay={dl}  bs={bs} hk={hk}");
                 AddCsv("HF", no, line);
             }
