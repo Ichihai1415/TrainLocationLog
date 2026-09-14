@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Reflection;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using TrainLocationLog;
@@ -31,6 +32,10 @@ var ak_station_dict = ak_station.Result.Data.Where(x => x.JsonName != null).ToDi
 Console.WriteLine("AK_station loaded.");
 
 System.Timers.Timer timer;
+
+var _runners = new List<Action<string, string>>();
+LoadPlugins();
+
 Console.WriteLine("init finish.\n");
 
 ScheduleNext();
@@ -184,13 +189,10 @@ void AddCsv(string comp, string no, string line)
     Directory.CreateDirectory(dir);
     var path = Path.Combine(dir, no + ".csv");
     if (File.Exists(path))
-    {
         File.AppendAllText(path, line);
-    }
     else
-    {
         File.WriteAllText(path, "dateTime,company,type,from,to,delay,other\n" + line);
-    }
+    CallDLL_Line(no, line);
     return;
 }
 
@@ -215,3 +217,58 @@ string RemoveTop0F(string str)
 "hk": "0"　　　
 }
  */
+
+
+void LoadPlugins()
+{
+    var dir = "plugin";
+
+    if (!Directory.Exists(dir))
+        return;
+
+    foreach (var path in Directory.GetFiles(dir, "*.dll"))
+    {
+        var asm = Assembly.LoadFrom(path);
+        Console.WriteLine("DLL loaded: " + path);
+
+        foreach (var type in asm.GetExportedTypes())
+        {
+            var method = type.GetMethod("Run",
+                BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static,
+                null,
+                [typeof(string), typeof(string)],
+                null);
+
+            if (method == null || method.ReturnType != typeof(void))
+                continue;
+
+            if (method.IsStatic)
+            {
+                var action = (Action<string, string>)Delegate.CreateDelegate(typeof(Action<string, string>), method);
+                _runners.Add(action);
+            }
+            else
+            {
+                var instance = Activator.CreateInstance(type);
+                var action = (Action<string, string>)Delegate.CreateDelegate(typeof(Action<string, string>), instance, method);
+                _runners.Add(action);
+            }
+        }
+    }
+
+
+}
+void CallDLL_Line(string num, string line)
+{
+    foreach (var run in _runners)
+    {
+        try
+        {
+            run(num, line);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"DLL実行時エラー: {ex.Message}");
+        }
+    }
+}
