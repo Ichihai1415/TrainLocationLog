@@ -127,11 +127,14 @@ void HF()
                 hf_carType_dict.TryGetValue(sy, out var syName);
                 hf_station_dict.TryGetValue(ik, out var ikName);
                 hf_station_dict.TryGetValue(id_num, out var idName);
+                _ = int.TryParse(id_num, out var id_num_i);
+                hf_station_dict.TryGetValue((id_num_i + (hk == "0" ? 1 : -1)).ToString(), out var idName_b);
                 syName ??= "null";
                 ikName ??= "null";
                 idName ??= "null";
-                var line = $"{dt},HF,{syName},{(isE ? idName : "(前駅)")},{(isE ? "null" : idName)},{dl},key={key}/id={id}/bs={bs}/hk={hk}\n";
-                Console.WriteLine($"  {no} {syName}  {(isU ? "上り" : isD ? "下り" : "")} {(ikName == "null" ? "" : (ikName + "行 "))} {(!isE ? "(前駅)～" : "")}{idName}{(isE ? "付近" : "")}  delay={dl}  bs={bs} hk={hk}");
+                idName_b ??= "null";
+                var line = $"{dt},HF,{syName},{(isE ? idName : idName_b)},{(isE ? "null" : idName)},{dl},key={key}/id={id}/bs={bs}/hk={hk}\n";
+                Console.WriteLine($"  {no} {syName}  {(isU ? "上り" : isD ? "下り" : "")} {(ikName == "null" ? "" : (ikName + "行 "))} {(!isE ? idName_b + "～" : "")}{idName}{(isE ? "付近" : "")}  delay={dl}  bs={bs} hk={hk}");
                 AddCsv("HF", no, line);
             }
         }

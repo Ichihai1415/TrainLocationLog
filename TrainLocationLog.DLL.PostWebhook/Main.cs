@@ -24,7 +24,7 @@ namespace TrainLocationLog.DLL.PostWebhook
                 return;
             nums.Add(num);
             var flag = false;
-            if (num.StartsWith('雪') || num.StartsWith('単') || num.StartsWith('試'))
+            if (num.StartsWith('雪') || num.StartsWith('単') || num.StartsWith('試') || num.StartsWith('配'))
                 flag = true;
             //var data = line.Split(',');
             else
@@ -71,6 +71,7 @@ namespace TrainLocationLog.DLL.PostWebhook
                 }
                 urls[urlKey] = url;
             }
+
             var obj = new
             {
                 content = message
