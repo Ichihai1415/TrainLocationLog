@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Net.Sockets;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -34,7 +35,10 @@ namespace TrainLocationLog.DLL.PostWebhook
                     flag = true;
             }
             if (flag)
+            {
                 Post("HF", "detect: " + num + " : " + line);
+                XPost(num + " : " + line);
+            }
 
         }
 
@@ -42,55 +46,91 @@ namespace TrainLocationLog.DLL.PostWebhook
         Dictionary<string, string> urls = [];
         private void Post(string urlKey, string message)
         {
-            string url;
-            if (urls.TryGetValue(urlKey, out string? value))
+            try
             {
-                url = value;
-            }
-            else
-            {
-                var path = "plugin\\TrainLocationLog.DLL.PostWebhook.URL_" + urlKey + ".txt";
-                if (File.Exists(path))
+                string url;
+                if (urls.TryGetValue(urlKey, out string? value))
                 {
-                    url = File.ReadAllText(path);
-                    urls[urlKey] = url;
+                    url = value;
                 }
                 else
                 {
-                    if (urlKey == "sandbox")
+                    var path = "plugin\\TrainLocationLog.DLL.PostWebhook.URL_" + urlKey + ".txt";
+                    if (File.Exists(path))
+                    {
+                        url = File.ReadAllText(path);
+                        urls[urlKey] = url;
+                    }
+                    else
+                    {
+                        if (urlKey == "sandbox")
+                            return;
+                        Console.WriteLine($"URLファイルが見つかりません: {path}");
+                        File.WriteAllText(path, "");
                         return;
-                    Console.WriteLine($"URLファイルが見つかりません: {path}");
-                    File.WriteAllText(path, "");
-                    return;
+                    }
+                    url = File.ReadAllText(path);
+                    if (!url.StartsWith("http"))
+                    {
+                        Console.WriteLine($"URLが設定されていません: {path}");
+                        return;
+                    }
+                    urls[urlKey] = url;
                 }
-                url = File.ReadAllText(path);
-                if (!url.StartsWith("http"))
+
+                var obj = new
                 {
-                    Console.WriteLine($"URLが設定されていません: {path}");
-                    return;
-                }
-                urls[urlKey] = url;
+                    content = message
+                };
+
+                var json = JsonSerializer.Serialize(obj);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var res = client.PostAsync(url, content).Result;
+                Console.WriteLine("[POST]StatusCode: " + res.StatusCode);
+
+                //Console.WriteLine($"送信中...");
+                //Task.Run(async () =>
+                //{
+                //    using var client = new HttpClient();
+                //    var res = await client.PostAsync(url, content);
+
+                //    Console.WriteLine("POST: " + res.StatusCode);
+
+                //});
             }
-
-            var obj = new
+            catch (Exception ex)
             {
-                content = message
-            };
+                Console.WriteLine("[POST]Error: " + ex.ToString());
+                return;
+            }
+        }
 
-            var json = JsonSerializer.Serialize(obj);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var res = client.PostAsync(url, content).Result;
-            Console.WriteLine("POST: " + res.StatusCode);
 
-            //Console.WriteLine($"送信中...");
-            //Task.Run(async () =>
-            //{
-            //    using var client = new HttpClient();
-            //    var res = await client.PostAsync(url, content);
-
-            //    Console.WriteLine("POST: " + res.StatusCode);
-
-            //});
+        /// <summary>
+        /// XPosterV2Hostに送信します。
+        /// </summary>
+        /// <param name="text">ポストするテキスト</param>
+        internal static void XPost(string text)
+        {
+            if (File.Exists("plugin\\TrainLocationLog.DLL.PostWebhook.XPosterV2_port.txt"))
+                try
+                {
+                    var sendText = $"{{ \"text\" : \"[自動] {text.Replace("\n", "\\\\n")}\" }}";
+                    Console.WriteLine("[XPost]Text:" + sendText);
+                    var message = new byte[16 * 1024];
+                    message = Encoding.UTF8.GetBytes(sendText);
+                    using var tcpClient = new TcpClient("127.0.0.1", int.Parse(File.ReadAllText("plugin\\TrainLocationLog.DLL.PostWebhook.XPosterV2_port.txt")));
+                    using var networkStream = tcpClient.GetStream();
+                    networkStream.Write(message, 0, message.Length);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("[XPost]" + ex.ToString());
+                }
+                finally
+                {
+                    Console.WriteLine("[XPost]X送信終了");
+                }
         }
     }
 }

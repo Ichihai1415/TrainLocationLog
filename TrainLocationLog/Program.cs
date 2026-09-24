@@ -32,11 +32,18 @@ var ak_station_dict = ak_station.Result.Data.Where(x => x.JsonName != null).ToDi
 Console.WriteLine("AK_station loaded.");
 
 System.Timers.Timer timer;
+var isFirst = true;
 
 var _runners = new List<Action<string, string>>();
 LoadPlugins();
 
 Console.WriteLine("init finish.\n");
+
+
+//dev
+//CallDLL_Line("9999", "(試験中),HF");
+//return;
+
 
 ScheduleNext();
 Thread.Sleep(Timeout.Infinite);
@@ -69,7 +76,7 @@ void ScheduleNext()
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Error in Run(): {ex}");
-            throw;
+            //throw;
         }
         finally
         {
@@ -86,6 +93,7 @@ void Run()
     HF();
     IRAK();
     Console.WriteLine();
+    isFirst = false;
 }
 
 void HF()
@@ -195,7 +203,8 @@ void AddCsv(string comp, string no, string line)
         File.AppendAllText(path, line);
     else
         File.WriteAllText(path, "dateTime,company,type,from,to,delay,other\n" + line);
-    CallDLL_Line(no, line);
+    if (!isFirst)
+        CallDLL_Line(no, line);
     return;
 }
 
@@ -261,6 +270,7 @@ void LoadPlugins()
 
 
 }
+
 void CallDLL_Line(string num, string line)
 {
     foreach (var run in _runners)
@@ -271,7 +281,7 @@ void CallDLL_Line(string num, string line)
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"DLL実行時エラー: {ex.Message}");
+            Console.Error.WriteLine($"DLL実行時エラー: {ex}");
         }
     }
 }
